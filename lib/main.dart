@@ -5,6 +5,5 @@ import './home.dart';
 void main() => runApp(MaterialApp(
       title: 'So Lyrical',
       home: Home(),
-      theme: ThemeData(primaryColor: Colors.red[400]),
+      theme: ThemeData(primaryColor: Colors.deepOrange[400]),
     ));
-

@@ -5,7 +5,7 @@ class LyricsTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Container(
-        child: Text('Lyrics Page'),
+        child: Text('Have A Musical Day'),
       ),
     );
   }
