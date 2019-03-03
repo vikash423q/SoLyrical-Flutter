@@ -3,6 +3,7 @@ import 'package:simple_permissions/simple_permissions.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:audioplayer/audioplayer.dart';
 import 'dart:io';
 import 'dart:core';
 
@@ -11,6 +12,7 @@ import './songList.dart';
 import './lyricstab.dart';
 import './song.dart';
 import './songProvider.dart';
+import './audioManager.dart';
 
 List<FileSystemEntity> _getSongs(Map<String, dynamic> map) {
   map['files'].forEach((entity) {
@@ -28,6 +30,52 @@ List<FileSystemEntity> _getSongs(Map<String, dynamic> map) {
   return map['cont'];
 }
 
+dynamic _findInExternalStorage() async {
+  Directory baseDir = await getExternalStorageDirectory();
+  List<FileSystemEntity> _files =
+      baseDir.listSync(recursive: true, followLinks: false);
+
+  print('getting songs from storage');
+  List<FileSystemEntity> cont = [];
+  cont = _getSongs({'files': _files, 'cont': cont});
+  return cont;
+}
+
+Future<List<Song>> _getSongFromDirectory(String str) async {
+  print('getting songs from directory');
+  if (Platform.isAndroid) {
+    var chekOkay = await SimplePermissions.checkPermission(
+        Permission.WriteExternalStorage);
+    var databasesPath = await getDatabasesPath();
+    String path = databasesPath + 'demo.db';
+    SongProvider provider = SongProvider();
+    await provider.open(path);
+    if (!chekOkay) {
+      var okDone = await SimplePermissions.requestPermission(
+          Permission.WriteExternalStorage);
+      if (okDone == PermissionStatus.authorized) {
+        List<FileSystemEntity> res = await _findInExternalStorage();
+        res.forEach((file) {
+          Song.fromFileTodb(file, provider);
+        });
+        // provider.insertMultiple(songs);
+        List<Song> songs = await provider.getAllSong();
+        return songs;
+      }
+    } else {
+      List<FileSystemEntity> res = await _findInExternalStorage();
+      res.forEach((file) {
+        Song.fromFileTodb(file, provider);
+      });
+      // provider.insertMultiple(songs);
+      List<Song> songs = await provider.getAllSong();
+      return songs;
+    }
+    provider.close();
+  }
+  return null;
+}
+
 class Home extends StatefulWidget {
   @override
   State<StatefulWidget> createState() {
@@ -37,6 +85,7 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   List<Song> _songs = [];
+  AudioManager audioManager;
 
   @override
   void didUpdateWidget(Home oldWidget) {
@@ -48,6 +97,7 @@ class _HomeState extends State<Home> {
   void initState() {
     super.initState();
     _getSongFromDatabase();
+    audioManager = AudioManager(new AudioPlayer());
   }
 
   void _getSongFromDatabase() async {
@@ -60,63 +110,18 @@ class _HomeState extends State<Home> {
     // print(deleteCount);
     print('getting from database');
     List<Song> songs = await provider.getAllSong();
-    print(songs);
     if (songs == null) {
       print('getting songs from directory');
-      await _getSongFromDirectory();
+      var res = await compute(_getSongFromDirectory, '');
+      var newSongs = await res;
+      setState(() {
+        _songs = newSongs;
+      });
     } else {
       print('setting state from database');
       setState(() {
         _songs = songs;
       });
-      provider.close();
-    }
-  }
-
-  dynamic _findInExternalStorage() async {
-    Directory baseDir = await getExternalStorageDirectory();
-    List<FileSystemEntity> _files =
-        baseDir.listSync(recursive: true, followLinks: false);
-
-    print('getting songs from storage');
-    List<FileSystemEntity> cont = [];
-    cont = await compute(_getSongs, ({'files': _files, 'cont': cont}));
-    return cont;
-  }
-
-  Future _getSongFromDirectory() async {
-    if (Platform.isAndroid) {
-      var chekOkay = await SimplePermissions.checkPermission(
-          Permission.WriteExternalStorage);
-      var databasesPath = await getDatabasesPath();
-      String path = databasesPath + 'demo.db';
-      SongProvider provider = SongProvider();
-      await provider.open(path);
-      if (!chekOkay) {
-        var okDone = await SimplePermissions.requestPermission(
-            Permission.WriteExternalStorage);
-        if (okDone == PermissionStatus.authorized) {
-          List<FileSystemEntity> res = await _findInExternalStorage();
-          res.forEach((file) {
-            Song.fromFileTodb(file, provider);
-          });
-          // provider.insertMultiple(songs);
-          List<Song> songs = await provider.getAllSong();
-          setState(() {
-            _songs = songs;
-          });
-        }
-      } else {
-        List<FileSystemEntity> res = await _findInExternalStorage();
-        res.forEach((file) {
-          Song.fromFileTodb(file, provider);
-        });
-        // provider.insertMultiple(songs);
-        List<Song> songs = await provider.getAllSong();
-        setState(() {
-          _songs = songs;
-        });
-      }
       provider.close();
     }
   }
@@ -133,7 +138,14 @@ class _HomeState extends State<Home> {
           actions: <Widget>[
             IconButton(
               icon: Icon(Icons.refresh),
-              onPressed: _getSongFromDirectory,
+              onPressed: () async {
+                var res = await compute(_getSongFromDirectory, '');
+                var songs = await res;
+                print(songs);
+                setState(() {
+                  _songs = songs;
+                });
+              },
             ),
             IconButton(
               icon: Icon(Icons.search),
@@ -154,7 +166,7 @@ class _HomeState extends State<Home> {
         ),
         body: TabBarView(
           children: [
-            SongListTab(_songs),
+            SongListTab(_songs, audioManager),
             LyricsTab(),
           ],
         ),

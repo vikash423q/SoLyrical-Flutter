@@ -52,7 +52,7 @@ class Song {
   Song.fromFileTodb(FileSystemEntity file, SongProvider provider) {
     path = file.path;
     retrieveMetaData(file).then((tags) {
-      title = tags['title'] != null ? tags['title'] : 'undefined';
+      title = tags['title'];
       album = tags['album'];
       artist = tags['artist'];
       lyrics = tags['lyrics'];

@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
-import 'dart:typed_data';
+import 'package:audioplayer/audioplayer.dart';
 
 import './controller.dart';
 import './song.dart';
+import './audioManager.dart';
 
 class SongListTab extends StatelessWidget {
   final List<Song> _songs;
-  SongListTab(this._songs);
+  final AudioManager audioManager;
+  SongListTab(this._songs, this.audioManager);
 
   @override
   Widget build(BuildContext context) {
@@ -28,20 +30,29 @@ class SongListTab extends StatelessWidget {
                         height: 50,
                         width: 50,
                       )),
-                title: Text(song.title),
+                title: Text(song.title != null ? song.title : ''),
                 subtitle: Text(song.artist != null ? song.artist : ''),
                 dense: true,
                 contentPadding:
                     EdgeInsets.symmetric(horizontal: 8.0, vertical: 0.0),
-                onTap: () {
-                  print('$song');
+                onTap: () async {
+                  if (audioManager.playingNow == song) {
+                    if (audioManager.playerState == AudioPlayerState.PLAYING)
+                      return await audioManager.pause();
+                    if (audioManager.playerState == AudioPlayerState.PAUSED)
+                      return await audioManager.play(song);
+                  }
+                  if (audioManager.playerState == AudioPlayerState.PLAYING ||
+                      audioManager.playerState == AudioPlayerState.PAUSED)
+                    await audioManager.stop();
+                  audioManager.play(song);
                 },
               );
             },
             itemCount: _songs.length,
           ),
         ),
-        Controller(),
+        Controller(audioManager),
       ],
     );
   }

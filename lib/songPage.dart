@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:audioplayer/audioplayer.dart';
+
+import './audioManager.dart';
 
 class SongPage extends StatelessWidget {
+  final AudioManager audioManager;
+  SongPage(this.audioManager);
   @override
   Widget build(BuildContext context) {
+    var song = audioManager.playingNow;
     return Scaffold(
       appBar: AppBar(
         title: Text('So Lyrical'),
@@ -30,12 +36,17 @@ class SongPage extends StatelessWidget {
                 borderRadius: BorderRadius.all(Radius.circular(4.0)),
                 child: Hero(
                   tag: 'song',
-                  child: Image.network(
-                    'https://source.unsplash.com/random/280x280/?music',
-                    height: 280.0,
-                    width: 280.0,
-                    fit: BoxFit.cover,
-                  ),
+                  child: song == null || song.imageData == null
+                      ? Image.asset(
+                          'assets/logo.png',
+                          height: 280,
+                          width: 280,
+                        )
+                      : Image.memory(
+                          song.imageData,
+                          height: 280,
+                          width: 280,
+                        ),
                 ),
               ),
             ),
@@ -46,14 +57,14 @@ class SongPage extends StatelessWidget {
               max: 100,
               value: 30,
               onChanged: (val) {
-                print('Slider moved to ${val}');
+                print('Slider moved to $val');
               },
             ),
             SizedBox(
               height: 20.0,
             ),
             Text(
-              'Call It What You Want',
+              song != null ? (song.title != null ? song.title : '') : '',
               style: TextStyle(
                 color: Colors.deepOrange,
                 fontSize: 24,
@@ -64,7 +75,7 @@ class SongPage extends StatelessWidget {
               height: 10.0,
             ),
             Text(
-              'Reputation',
+              song != null ? (song.album != null ? song.album : '') : '',
               style: TextStyle(
                 color: Colors.black,
                 fontSize: 20,
@@ -91,7 +102,9 @@ class SongPage extends StatelessWidget {
                 ),
                 IconButton(
                   icon: Icon(
-                    Icons.play_arrow,
+                    audioManager.playerState == AudioPlayerState.PLAYING
+                        ? Icons.pause
+                        : Icons.play_arrow,
                     size: 40.0,
                   ),
                   onPressed: () {
