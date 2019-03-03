@@ -19,15 +19,17 @@ class SongPage extends StatelessWidget {
         child: Column(
           children: <Widget>[
             Container(
+              height: 280,
+              width: 280,
               decoration: BoxDecoration(boxShadow: [
                 BoxShadow(color: Colors.grey[500], blurRadius: 16.0),
               ]),
               margin: EdgeInsets.symmetric(vertical: 40.0, horizontal: 24.0),
               padding: EdgeInsets.all(0.0),
-              child: Hero(
-                tag: 'song',
-                child: ClipRRect(
-                  borderRadius: BorderRadius.all(Radius.circular(4.0)),
+              child: ClipRRect(
+                borderRadius: BorderRadius.all(Radius.circular(4.0)),
+                child: Hero(
+                  tag: 'song',
                   child: Image.network(
                     'https://source.unsplash.com/random/280x280/?music',
                     height: 280.0,
