@@ -25,23 +25,23 @@ class Song {
 
   Song();
 
-  retrieveMetaData(FileSystemEntity file) async {
+  retrieveMetaData(File file) async {
     var meta;
     try {
-      meta = await new TagProcessor()
-          .getTagsFromByteArray((file as File).readAsBytes());
+      meta = await new TagProcessor().getTagsFromByteArray(file.readAsBytes());
     } catch (e) {
       return null;
     }
     return meta[1].tags;
   }
 
-  Future<dynamic> saveFromFileTodb(FileSystemEntity file, SongProvider provider) async{
+  Future<dynamic> saveFromFileTodb(
+      FileSystemEntity file, SongProvider provider) async {
     path = file.path;
     var tags = await retrieveMetaData(file);
-    title = tags['title'];
-    album = tags['album'];
-    artist = tags['artist'];
+    title = formatText(tags['title']);
+    album = formatText(tags['album']);
+    artist = formatText(tags['artist']);
     lyrics = tags['lyrics'];
     imageData = await _getImageData(path);
     return provider.insert(this);
@@ -50,9 +50,9 @@ class Song {
   Song.fromFileTodb(FileSystemEntity file, SongProvider provider) {
     path = file.path;
     retrieveMetaData(file).then((tags) {
-      title = tags['title'];
-      album = tags['album'];
-      artist = tags['artist'];
+      title = formatText(tags['title']);
+      album = formatText(tags['album']);
+      artist = formatText(tags['artist']);
       lyrics = tags['lyrics'];
       imageData = tags['APIC'] != null
           ? Uint8List.fromList(tags['APIC'].imageData)
@@ -86,17 +86,29 @@ class Song {
     return this.toMap().toString();
   }
 
-  static const platform = const MethodChannel('flutter.io/Id3');
+  String formatText(String val) {
+    if (val == null) return val;
+    print(val);
+    String formatted =
+        val.replaceAll(new RegExp(r'\(.*\)'), ''); // remove (ANYWORD)
+    formatted = val.replaceAll(
+        new RegExp(r'-[.*]'), ''); // remove - ANY TEXT AFTER HYPHEN
+    formatted = val.replaceAll(
+        new RegExp(r'\w+\.\w+'), ''); // remove word.word ANY DOMAIN WORD
+    print(formatted);
+    return formatted;
+  }
+
+  static const platform = const MethodChannel('flutter.io/solyrical');
 
   Future<Uint8List> _getImageData(path) async {
     Uint8List imageData;
     try {
-      imageData = await platform.invokeMethod('getImage',{'path':path});
+      imageData = await platform.invokeMethod('getImage', {'path': path});
     } on PlatformException catch (e) {
       print('exception occured in getting image');
       imageData = null;
     }
     return imageData;
   }
-
 }

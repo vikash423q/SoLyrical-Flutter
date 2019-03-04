@@ -11,10 +11,9 @@ class SongPage extends StatefulWidget {
   State<StatefulWidget> createState() {
     return SongPageState();
   }
-
 }
 
-class SongPageState extends State<SongPage>{
+class SongPageState extends State<SongPage> {
   AudioManager _audioManager;
   AudioPlayerState _playerState;
   var _audioPlayerStateSubscription;
@@ -22,12 +21,13 @@ class SongPageState extends State<SongPage>{
   @override
   void initState() {
     super.initState();
-    _audioManager=widget._audioManager;
-    _playerState=_audioManager.playerState;
-    _audioPlayerStateSubscription =_audioManager.audioPlayer.onPlayerStateChanged.listen((_state){
+    _audioManager = widget._audioManager;
+    _playerState = _audioManager.playerState;
+    _audioPlayerStateSubscription =
+        _audioManager.audioPlayer.onPlayerStateChanged.listen((_state) {
       setState(() {
         print('setting player state in songpage');
-        _playerState=_state;
+        _playerState = _state;
       });
     });
   }
@@ -118,9 +118,9 @@ class SongPageState extends State<SongPage>{
                   ),
                   onPressed: () async {
                     setState(() {
-                        _playerState =AudioPlayerState.PLAYING;
-                      });
-                      return await _audioManager.playPrev();
+                      _playerState = AudioPlayerState.PLAYING;
+                    });
+                    return await _audioManager.playPrev();
                   },
                 ),
                 SizedBox(
@@ -135,17 +135,17 @@ class SongPageState extends State<SongPage>{
                   ),
                   onPressed: () async {
                     if (_playerState == AudioPlayerState.PLAYING) {
-                        setState(() {
-                          _playerState = AudioPlayerState.PAUSED;
-                        });
-                        return await _audioManager.pause();
-                      }
-                      if (_playerState == AudioPlayerState.PAUSED) {
-                        setState(() {
-                          _playerState = AudioPlayerState.PLAYING;
-                        });
-                        return await _audioManager.play(song);
-                      }
+                      setState(() {
+                        _playerState = AudioPlayerState.PAUSED;
+                      });
+                      return await _audioManager.pause();
+                    }
+                    if (_playerState == AudioPlayerState.PAUSED) {
+                      setState(() {
+                        _playerState = AudioPlayerState.PLAYING;
+                      });
+                      return await _audioManager.play(song);
+                    }
                   },
                 ),
                 SizedBox(
@@ -157,10 +157,10 @@ class SongPageState extends State<SongPage>{
                     size: 40.0,
                   ),
                   onPressed: () async {
-                     setState(() {
-                        _playerState =AudioPlayerState.PLAYING;
-                      });
-                      return await _audioManager.playNext();
+                    setState(() {
+                      _playerState = AudioPlayerState.PLAYING;
+                    });
+                    return await _audioManager.playNext();
                   },
                 ),
               ],
@@ -186,15 +186,25 @@ class MovingSliderState extends State<MovingSlider> {
   int _max = 0;
   int _position = 0;
   var _positionSubscription;
+  var _audioPlayerStateSubscription;
 
   @override
   void initState() {
     super.initState();
     _audioPlayer = widget.audioPlayer;
-    _positionSubscription = _audioPlayer.onAudioPositionChanged.listen((position) {
+    _positionSubscription =
+        _audioPlayer.onAudioPositionChanged.listen((position) {
       setState(() {
         _position = position.inSeconds;
       });
+    });
+    _audioPlayerStateSubscription =
+        _audioPlayer.onPlayerStateChanged.listen((_state) {
+      if (_state == AudioPlayerState.PLAYING) {
+        setState(() {
+          _max = _audioPlayer.duration.inSeconds;
+        });
+      }
     });
     setState(() {
       _max = _audioPlayer.duration.inSeconds;
@@ -210,6 +220,7 @@ class MovingSliderState extends State<MovingSlider> {
   @override
   void dispose() {
     _positionSubscription.cancel();
+    _audioPlayerStateSubscription.cancel();
     super.dispose();
   }
 

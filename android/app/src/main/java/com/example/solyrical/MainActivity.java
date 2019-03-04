@@ -15,9 +15,12 @@ import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
 import android.media.MediaMetadataRetriever;
+import android.os.Environment;
+import java.io.File;
+import java.util.ArrayList;
 
 public class MainActivity extends FlutterActivity {
-  private static final String CHANNEL = "flutter.io/Id3";
+  private static final String CHANNEL = "flutter.io/solyrical";
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -41,6 +44,10 @@ public class MainActivity extends FlutterActivity {
                         retriever.release();
                         result.success(data);
                       }
+                      else if(call.method.equals("getSongs")){
+
+                        result.success(getSongs());
+                      }
                       else {
                         result.notImplemented();
                       }
@@ -48,5 +55,24 @@ public class MainActivity extends FlutterActivity {
                     }
                 });
  
+  }
+
+  public ArrayList<String> getSongs(){
+    File file= Environment.getExternalStorageDirectory();
+    String root=file.getPath()+"/";
+    ArrayList<String> songs=new ArrayList<String>();
+    scanDirectory(file.listFiles(),songs);
+    return songs;
+  }
+
+
+  public void scanDirectory(File[] files,ArrayList<String> songs) {
+    for (File temp : files) {
+      if (temp.isDirectory() && !temp.toString().contains("/."))
+        scanDirectory(temp.listFiles(),songs);
+      else if (temp.getAbsolutePath().endsWith(".mp3")) {
+        songs.add(temp.getAbsolutePath());
+      }
+    }
   }
 }

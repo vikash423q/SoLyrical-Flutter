@@ -8,8 +8,8 @@ class AudioManager {
   int current;
   Song playingNow;
 
-  AudioManager(this.songs,this.audioPlayer) {
-    current=0;
+  AudioManager(this.songs, this.audioPlayer) {
+    current = 0;
     playerState = AudioPlayerState.STOPPED;
   }
 
@@ -21,19 +21,23 @@ class AudioManager {
   }
 
   Future<void> playNext() async {
-    if(current>=songs.length-1)
-      current=-1;
-    await audioPlayer.play(songs[current+1].path);
+    if (current >= songs.length - 1) current = -1;
+    if (playerState == AudioPlayerState.PLAYING ||
+        playerState == AudioPlayerState.PAUSED) await this.stop();
+    current++;
+    await audioPlayer.play(songs[current].path);
     playerState = AudioPlayerState.PLAYING;
-    playingNow = songs[current+1];
+    playingNow = songs[current];
   }
 
   Future<void> playPrev() async {
-    if(current<=0)
-      current=songs.length;
-    await audioPlayer.play(songs[current-1].path);
+    if (current <= 0) current = songs.length;
+    if (playerState == AudioPlayerState.PLAYING ||
+        playerState == AudioPlayerState.PAUSED) await this.stop();
+    current--;
+    await audioPlayer.play(songs[current].path);
     playerState = AudioPlayerState.PLAYING;
-    playingNow = songs[current-1];
+    playingNow = songs[current];
   }
 
   Future<void> pause() async {

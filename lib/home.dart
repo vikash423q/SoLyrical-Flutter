@@ -13,23 +13,7 @@ import './lyricstab.dart';
 import './song.dart';
 import './songProvider.dart';
 import './audioManager.dart';
-
-List<FileSystemEntity> _getSongs(Map<String, dynamic> map) {
-  map['files'].forEach((entity) {
-    if (entity is Directory) {
-      List<FileSystemEntity> _list =
-          entity.listSync(recursive: true, followLinks: false);
-      _getSongs({'files': _list, 'cont': map['cont']});
-    }
-    if (entity is File) {
-      if (entity.path.endsWith('.mp3') && !entity.path.contains('/.')) {
-        map['cont'].add(entity);
-      }
-    }
-  });
-  return map['cont'];
-}
-
+import './util.dart';
 
 class Home extends StatefulWidget {
   @override
@@ -53,27 +37,28 @@ class _HomeState extends State<Home> {
     super.initState();
     _checkPermission();
     _getSongFromDatabase();
-    _audioManager = AudioManager(_songs,new AudioPlayer());
+    _audioManager = AudioManager(_songs, new AudioPlayer());
   }
 
-  void _checkPermission(){
+  void _checkPermission() {
     if (Platform.isAndroid) {
-      SimplePermissions.checkPermission(Permission.WriteExternalStorage).then((chekOkay){
+      SimplePermissions.checkPermission(Permission.WriteExternalStorage)
+          .then((chekOkay) {
         if (!chekOkay) {
-          SimplePermissions.requestPermission(Permission.WriteExternalStorage).then((okDone){
+          SimplePermissions.requestPermission(Permission.WriteExternalStorage)
+              .then((okDone) {
             setState(() {
-              persmissionStatus=okDone;
+              persmissionStatus = okDone;
             });
           });
-        } else{
+        } else {
           setState(() {
-            persmissionStatus=PermissionStatus.authorized;
+            persmissionStatus = PermissionStatus.authorized;
           });
         }
       });
     }
   }
-
 
   void _getSongFromDatabase() async {
     var databasesPath = await getDatabasesPath();
@@ -85,55 +70,30 @@ class _HomeState extends State<Home> {
     print(await deleteCount);
     List<Song> songs = await provider.getAllSong();
     if (songs == null) {
-      bool permission = persmissionStatus == PermissionStatus.authorized ? true : false;
-      await _getSongFromDirectory(permission);
+      await _getSongFromStorage(provider);
     } else {
       setState(() {
         _songs = songs;
-        _audioManager.songs=_songs;
+        _audioManager.songs = _songs;
       });
     }
     provider.close();
   }
 
-  dynamic _findInExternalStorage() async {
-  Directory baseDir = await getExternalStorageDirectory();
-  List<FileSystemEntity> _files =
-      baseDir.listSync(recursive: true, followLinks: false);
-
-  List<FileSystemEntity> cont = [];
-  cont = await compute(_getSongs,({'files': _files, 'cont': cont}));
-  return cont;
-}
-
-dynamic _getSongFromDirectory(bool permission) async {
-    var databasesPath = await getDatabasesPath();
-    String path = databasesPath + 'demo.db';
-    SongProvider provider = SongProvider();
-    await provider.open(path);
-    if(permission){
-        List<FileSystemEntity> res = await _findInExternalStorage();
-
-        await provider.deleteAll();
-        for(var i=0;i<res.length;i++){
-          Song song = new Song();
-          await song.saveFromFileTodb(res[i], provider);
-          print('saving to db');
-        }
-        // provider.insertMultiple(songs);
-        print('getting from db');
-        List<Song> songs = await provider.getAllSong();
-
-        setState(() {
-          _songs=songs;
-          _audioManager.songs=songs;
-        });
-        provider.close();
-        return songs;
-      }
-    provider.close();
-  return null;
-}
+  _getSongFromStorage(SongProvider provider) async {
+    List<String> localSongs = await LocalStorage.getLocalSongs();
+    provider.deleteAll();
+    for (var i = 0; i < localSongs.length; i++) {
+      var song = Song();
+      await song.saveFromFileTodb(
+          File.fromUri(Uri(path: localSongs[i])), provider);
+    }
+    List<Song> _newSongs = await provider.getAllSong();
+    setState(() {
+      _songs = _newSongs;
+      _audioManager.songs = _songs;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -148,8 +108,12 @@ dynamic _getSongFromDirectory(bool permission) async {
             IconButton(
               icon: Icon(Icons.refresh),
               onPressed: () async {
-                bool permission = persmissionStatus == PermissionStatus.authorized ? true : false;
-                await _getSongFromDirectory(permission);
+                var databasesPath = await getDatabasesPath();
+                String path = databasesPath + 'demo.db';
+                SongProvider provider = new SongProvider();
+                await provider.open(path);
+                await _getSongFromStorage(provider);
+                provider.close();
               },
             ),
             IconButton(
