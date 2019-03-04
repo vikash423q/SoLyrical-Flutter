@@ -1,6 +1,6 @@
+import 'package:flutter/services.dart';
 import 'package:dart_tags/dart_tags.dart';
 import 'dart:typed_data';
-import 'package:sqflite/sqflite.dart';
 import 'dart:io';
 
 import './songProvider.dart';
@@ -36,17 +36,15 @@ class Song {
     return meta[1].tags;
   }
 
-  Song.fromFile(FileSystemEntity file) {
+  Future<dynamic> saveFromFileTodb(FileSystemEntity file, SongProvider provider) async{
     path = file.path;
-    retrieveMetaData(file).then((tags) {
-      title = tags['title'] != null ? tags['title'] : 'undefined';
-      album = tags['album'];
-      artist = tags['artist'];
-      lyrics = tags['lyrics'];
-      imageData = tags['APIC'] != null
-          ? Uint8List.fromList(tags['APIC'].imageData)
-          : null;
-    });
+    var tags = await retrieveMetaData(file);
+    title = tags['title'];
+    album = tags['album'];
+    artist = tags['artist'];
+    lyrics = tags['lyrics'];
+    imageData = await _getImageData(path);
+    return provider.insert(this);
   }
 
   Song.fromFileTodb(FileSystemEntity file, SongProvider provider) {
@@ -87,4 +85,18 @@ class Song {
   String toString() {
     return this.toMap().toString();
   }
+
+  static const platform = const MethodChannel('flutter.io/Id3');
+
+  Future<Uint8List> _getImageData(path) async {
+    Uint8List imageData;
+    try {
+      imageData = await platform.invokeMethod('getImage',{'path':path});
+    } on PlatformException catch (e) {
+      print('exception occured in getting image');
+      imageData = null;
+    }
+    return imageData;
+  }
+
 }

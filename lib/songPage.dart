@@ -6,6 +6,7 @@ import './audioManager.dart';
 class SongPage extends StatelessWidget {
   final AudioManager audioManager;
   SongPage(this.audioManager);
+
   @override
   Widget build(BuildContext context) {
     var song = audioManager.playingNow;
@@ -129,5 +130,45 @@ class SongPage extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class MovingSlider extends StatefulWidget{
+  final AudioPlayer  audioPlayer;
+  MovingSlider(this.audioPlayer); 
+  @override
+  State<StatefulWidget> createState() {
+    return MovingSliderState();
+  }
+}
+
+class MovingSliderState extends State<MovingSlider>{
+  AudioPlayer _audioPlayer;
+  Duration _position;
+
+  @override
+  void initState() {
+    super.initState();
+    _audioPlayer=widget.audioPlayer;
+    _audioPlayer.onAudioPositionChanged.listen((position){
+      setState(() {
+        _position=position;
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    
+    return Slider(
+              inactiveColor: Colors.grey[400],
+              activeColor: Colors.grey[600],
+              min: 0,
+              max: 100,
+              value: double.parse(_position.inSeconds),
+              onChanged: (val) {
+                
+              },
+          );
   }
 }

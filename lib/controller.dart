@@ -111,16 +111,18 @@ class ControllerState extends State<Controller> {
                     ),
                     onPressed: () async {
                       if (playerState == AudioPlayerState.PLAYING) {
-                        await _audioManager.pause();
                         setState(() {
                           playerState = AudioPlayerState.PAUSED;
                         });
+                        return await _audioManager.pause();
+
                       }
                       if (playerState == AudioPlayerState.PAUSED) {
-                        await _audioManager.play(song);
+                        
                         setState(() {
                           playerState = AudioPlayerState.PLAYING;
                         });
+                        return await _audioManager.play(song);
                       }
                     },
                   ),
