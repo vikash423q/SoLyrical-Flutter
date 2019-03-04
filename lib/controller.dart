@@ -2,22 +2,59 @@ import 'package:flutter/material.dart';
 import 'package:audioplayer/audioplayer.dart';
 
 import './songPage.dart';
+import './song.dart';
 import './audioManager.dart';
 
-class Controller extends StatelessWidget {
+class Controller extends StatefulWidget {
   final AudioManager audioManager;
 
   Controller(this.audioManager);
 
   @override
+  State<StatefulWidget> createState() {
+    return ControllerState();
+  }
+}
+
+class ControllerState extends State<Controller> {
+  AudioManager _audioManager;
+  Song song;
+  AudioPlayerState playerState;
+
+  @override
+  void initState() {
+    _audioManager = widget.audioManager;
+    song = _audioManager.playingNow;
+    playerState = _audioManager.playerState;
+    super.initState();
+    _audioManager.audioPlayer.onPlayerStateChanged.listen((s) {
+      if (s == AudioPlayerState.PLAYING) {
+        setState(() {
+          song = _audioManager.playingNow;
+          playerState = AudioPlayerState.PLAYING;
+        });
+      } else if (s == AudioPlayerState.STOPPED ||
+          s == AudioPlayerState.COMPLETED ||
+          s == AudioPlayerState.PAUSED) {
+        setState(() {
+          playerState = s;
+        });
+      }
+    }, onError: (msg) {
+      setState(() {
+        playerState = AudioPlayerState.STOPPED;
+      });
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    var song = audioManager.playingNow;
     return GestureDetector(
       onTap: () {
         Navigator.push(
             context,
             MaterialPageRoute(
-                builder: (BuildContext context) => SongPage(audioManager)));
+                builder: (BuildContext context) => SongPage(_audioManager)));
       },
       child: Container(
         decoration:
@@ -66,19 +103,24 @@ class Controller extends StatelessWidget {
                 children: <Widget>[
                   IconButton(
                     icon: Icon(
-                      audioManager.playerState == AudioPlayerState.PLAYING
+                      playerState == AudioPlayerState.PLAYING
                           ? Icons.pause
                           : Icons.play_arrow,
                       size: 40.0,
                       color: Colors.white,
                     ),
                     onPressed: () async {
-                      if (audioManager.playerState ==
-                          AudioPlayerState.PLAYING) {
-                        await audioManager.pause();
+                      if (playerState == AudioPlayerState.PLAYING) {
+                        await _audioManager.pause();
+                        setState(() {
+                          playerState = AudioPlayerState.PAUSED;
+                        });
                       }
-                      if (audioManager.playerState == AudioPlayerState.PAUSED) {
-                        await audioManager.play(song);
+                      if (playerState == AudioPlayerState.PAUSED) {
+                        await _audioManager.play(song);
+                        setState(() {
+                          playerState = AudioPlayerState.PLAYING;
+                        });
                       }
                     },
                   ),

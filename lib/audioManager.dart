@@ -2,7 +2,7 @@ import 'package:audioplayer/audioplayer.dart';
 import './song.dart';
 
 class AudioManager {
-  final AudioPlayer audioPlayer;
+  AudioPlayer audioPlayer;
   AudioPlayerState playerState;
   Song playingNow;
 
