@@ -3,13 +3,44 @@ import 'package:audioplayer/audioplayer.dart';
 
 import './audioManager.dart';
 
-class SongPage extends StatelessWidget {
-  final AudioManager audioManager;
-  SongPage(this.audioManager);
+class SongPage extends StatefulWidget {
+  final AudioManager _audioManager;
+  SongPage(this._audioManager);
+
+  @override
+  State<StatefulWidget> createState() {
+    return SongPageState();
+  }
+
+}
+
+class SongPageState extends State<SongPage>{
+  AudioManager _audioManager;
+  AudioPlayerState _playerState;
+  var _audioPlayerStateSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _audioManager=widget._audioManager;
+    _playerState=_audioManager.playerState;
+    _audioPlayerStateSubscription =_audioManager.audioPlayer.onPlayerStateChanged.listen((_state){
+      setState(() {
+        print('setting player state in songpage');
+        _playerState=_state;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _audioPlayerStateSubscription.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    var song = audioManager.playingNow;
+    var song = _audioManager.playingNow;
     return Scaffold(
       appBar: AppBar(
         title: Text('So Lyrical'),
@@ -51,16 +82,7 @@ class SongPage extends StatelessWidget {
                 ),
               ),
             ),
-            Slider(
-              inactiveColor: Colors.grey[400],
-              activeColor: Colors.grey[600],
-              min: 0,
-              max: 100,
-              value: 30,
-              onChanged: (val) {
-                print('Slider moved to $val');
-              },
-            ),
+            MovingSlider(_audioManager.audioPlayer),
             SizedBox(
               height: 20.0,
             ),
@@ -94,8 +116,11 @@ class SongPage extends StatelessWidget {
                     Icons.fast_rewind,
                     size: 40.0,
                   ),
-                  onPressed: () {
-                    print('prev pressed');
+                  onPressed: () async {
+                    setState(() {
+                        _playerState =AudioPlayerState.PLAYING;
+                      });
+                      return await _audioManager.playPrev();
                   },
                 ),
                 SizedBox(
@@ -103,13 +128,24 @@ class SongPage extends StatelessWidget {
                 ),
                 IconButton(
                   icon: Icon(
-                    audioManager.playerState == AudioPlayerState.PLAYING
+                    _playerState == AudioPlayerState.PLAYING
                         ? Icons.pause
                         : Icons.play_arrow,
                     size: 40.0,
                   ),
-                  onPressed: () {
-                    print('play pressed');
+                  onPressed: () async {
+                    if (_playerState == AudioPlayerState.PLAYING) {
+                        setState(() {
+                          _playerState = AudioPlayerState.PAUSED;
+                        });
+                        return await _audioManager.pause();
+                      }
+                      if (_playerState == AudioPlayerState.PAUSED) {
+                        setState(() {
+                          _playerState = AudioPlayerState.PLAYING;
+                        });
+                        return await _audioManager.play(song);
+                      }
                   },
                 ),
                 SizedBox(
@@ -120,8 +156,11 @@ class SongPage extends StatelessWidget {
                     Icons.fast_forward,
                     size: 40.0,
                   ),
-                  onPressed: () {
-                    print('next pressed');
+                  onPressed: () async {
+                     setState(() {
+                        _playerState =AudioPlayerState.PLAYING;
+                      });
+                      return await _audioManager.playNext();
                   },
                 ),
               ],
@@ -133,42 +172,75 @@ class SongPage extends StatelessWidget {
   }
 }
 
-class MovingSlider extends StatefulWidget{
-  final AudioPlayer  audioPlayer;
-  MovingSlider(this.audioPlayer); 
+class MovingSlider extends StatefulWidget {
+  final AudioPlayer audioPlayer;
+  MovingSlider(this.audioPlayer);
   @override
   State<StatefulWidget> createState() {
     return MovingSliderState();
   }
 }
 
-class MovingSliderState extends State<MovingSlider>{
+class MovingSliderState extends State<MovingSlider> {
   AudioPlayer _audioPlayer;
-  Duration _position;
+  int _max = 0;
+  int _position = 0;
+  var _positionSubscription;
 
   @override
   void initState() {
     super.initState();
-    _audioPlayer=widget.audioPlayer;
-    _audioPlayer.onAudioPositionChanged.listen((position){
+    _audioPlayer = widget.audioPlayer;
+    _positionSubscription = _audioPlayer.onAudioPositionChanged.listen((position) {
       setState(() {
-        _position=position;
+        _position = position.inSeconds;
       });
     });
+    setState(() {
+      _max = _audioPlayer.duration.inSeconds;
+    });
+  }
+
+  String _getFormattedTime(int seconds) {
+    var min = (seconds ~/ 60).toString().padLeft(2, '0');
+    var sec = (seconds % 60).toString().padLeft(2, '0');
+    return min + ":" + sec;
+  }
+
+  @override
+  void dispose() {
+    _positionSubscription.cancel();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    
-    return Slider(
-              inactiveColor: Colors.grey[400],
-              activeColor: Colors.grey[600],
-              min: 0,
-              max: 100,
-              value: double.parse(_position.inSeconds),
-              onChanged: (val) {
-                
-              },
-          );
+    return Column(
+      children: <Widget>[
+        Slider(
+          inactiveColor: Colors.grey[400],
+          activeColor: Colors.grey[600],
+          min: 0,
+          max: _max.toDouble(),
+          value: _position.toDouble(),
+          onChanged: (val) async {
+            setState(() {
+              _position = val.toInt();
+            });
+            await _audioPlayer.seek(val);
+          },
+        ),
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 12.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: <Widget>[
+              Text(_getFormattedTime(_position)),
+              Text(_getFormattedTime(_max)),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }

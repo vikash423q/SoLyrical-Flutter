@@ -40,7 +40,7 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   List<Song> _songs = [];
-  AudioManager audioManager;
+  AudioManager _audioManager;
   PermissionStatus persmissionStatus;
 
   @override
@@ -53,7 +53,7 @@ class _HomeState extends State<Home> {
     super.initState();
     _checkPermission();
     _getSongFromDatabase();
-    audioManager = AudioManager(new AudioPlayer());
+    _audioManager = AudioManager(_songs,new AudioPlayer());
   }
 
   void _checkPermission(){
@@ -90,6 +90,7 @@ class _HomeState extends State<Home> {
     } else {
       setState(() {
         _songs = songs;
+        _audioManager.songs=_songs;
       });
     }
     provider.close();
@@ -125,6 +126,7 @@ dynamic _getSongFromDirectory(bool permission) async {
 
         setState(() {
           _songs=songs;
+          _audioManager.songs=songs;
         });
         provider.close();
         return songs;
@@ -169,7 +171,7 @@ dynamic _getSongFromDirectory(bool permission) async {
         ),
         body: TabBarView(
           children: [
-            SongListTab(_songs, audioManager),
+            SongListTab(_songs, _audioManager),
             LyricsTab(),
           ],
         ),

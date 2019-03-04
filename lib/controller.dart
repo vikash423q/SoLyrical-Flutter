@@ -20,6 +20,7 @@ class ControllerState extends State<Controller> {
   AudioManager _audioManager;
   Song song;
   AudioPlayerState playerState;
+  var _playerStateSubscription;
 
   @override
   void initState() {
@@ -27,7 +28,7 @@ class ControllerState extends State<Controller> {
     song = _audioManager.playingNow;
     playerState = _audioManager.playerState;
     super.initState();
-    _audioManager.audioPlayer.onPlayerStateChanged.listen((s) {
+    _playerStateSubscription=_audioManager.audioPlayer.onPlayerStateChanged.listen((s) {
       if (s == AudioPlayerState.PLAYING) {
         setState(() {
           song = _audioManager.playingNow;
@@ -45,6 +46,12 @@ class ControllerState extends State<Controller> {
         playerState = AudioPlayerState.STOPPED;
       });
     });
+  }
+
+  @override
+  void dispose() {
+    _playerStateSubscription.cancel();
+    super.dispose();
   }
 
   @override
@@ -132,8 +139,11 @@ class ControllerState extends State<Controller> {
                       size: 40.0,
                       color: Colors.white,
                     ),
-                    onPressed: () {
-                      print('next button pressed');
+                    onPressed: () async{
+                      setState(() {
+                        playerState =AudioPlayerState.PLAYING;
+                      });
+                      return await _audioManager.playNext();
                     },
                   ),
                 ],
