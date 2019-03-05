@@ -67,9 +67,14 @@ class LyricsTabState extends State<LyricsTab> {
     List<String> pages = [];
     // saving all pages found as result
     matches.forEach((item) => pages.add(item.group(1)));
-    response = await http.get(pages[0],
-        headers: {"User-agent": "Mozilla/5.0 (Windows NT 6.1; WOW64)"});
-    String lyricsPage = response.body;
+    // response = await http.get(pages[0], headers: headers);
+    http.Client client =http.Client();
+    var userClient =UserAgentClient(client);
+    http.BaseRequest request = http.Request('GET', Uri.parse(pages[0]));
+    http.StreamedResponse streamedResponse = await userClient.send(request);
+    
+    String lyricsPage = await streamedResponse.stream.bytesToString();
+    print(pages[0]);
     print(lyricsPage);
     RegExp lyricsexp = new RegExp(lyricsregex);
     Match match = lyricsexp.firstMatch(lyricsPage);
@@ -95,5 +100,18 @@ class LyricsTabState extends State<LyricsTab> {
         child: Text(_getLyricsLocal()),
       ),
     );
+  }
+}
+
+class UserAgentClient extends http.BaseClient {
+  final http.Client _inner;
+
+  UserAgentClient(this._inner);
+
+  Future<http.StreamedResponse> send(http.BaseRequest request) {
+    request.headers['User-Agent'] = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36';
+    request.headers['Origin'] = 'https://www.facebook.com';
+    request.headers['Referer'] = 'https://www.facebook.com';
+    return _inner.send(request);
   }
 }
