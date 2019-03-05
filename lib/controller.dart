@@ -28,7 +28,8 @@ class ControllerState extends State<Controller> {
     song = _audioManager.playingNow;
     playerState = _audioManager.playerState;
     super.initState();
-    _playerStateSubscription=_audioManager.audioPlayer.onPlayerStateChanged.listen((s) {
+    _playerStateSubscription =
+        _audioManager.audioPlayer.onPlayerStateChanged.listen((s) {
       if (s == AudioPlayerState.PLAYING) {
         setState(() {
           song = _audioManager.playingNow;
@@ -57,6 +58,12 @@ class ControllerState extends State<Controller> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
+      onVerticalDragStart: (DragStartDetails details) {
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (BuildContext context) => SongPage(_audioManager)));
+      },
       onTap: () {
         Navigator.push(
             context,
@@ -122,10 +129,8 @@ class ControllerState extends State<Controller> {
                           playerState = AudioPlayerState.PAUSED;
                         });
                         return await _audioManager.pause();
-
                       }
                       if (playerState == AudioPlayerState.PAUSED) {
-                        
                         setState(() {
                           playerState = AudioPlayerState.PLAYING;
                         });
@@ -139,9 +144,9 @@ class ControllerState extends State<Controller> {
                       size: 40.0,
                       color: Colors.white,
                     ),
-                    onPressed: () async{
+                    onPressed: () async {
                       setState(() {
-                        playerState =AudioPlayerState.PLAYING;
+                        playerState = AudioPlayerState.PLAYING;
                       });
                       return await _audioManager.playNext();
                     },

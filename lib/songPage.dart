@@ -53,119 +53,124 @@ class SongPageState extends State<SongPage> {
           ),
         ],
       ),
-      body: Center(
-        child: Column(
-          children: <Widget>[
-            Container(
-              height: 280,
-              width: 280,
-              decoration: BoxDecoration(boxShadow: [
-                BoxShadow(color: Colors.grey[500], blurRadius: 16.0),
-              ]),
-              margin: EdgeInsets.symmetric(vertical: 40.0, horizontal: 24.0),
-              padding: EdgeInsets.all(0.0),
-              child: ClipRRect(
-                borderRadius: BorderRadius.all(Radius.circular(4.0)),
-                child: Hero(
-                  tag: 'song',
-                  child: song == null || song.imageData == null
-                      ? Image.asset(
-                          'assets/logo.png',
-                          height: 280,
-                          width: 280,
-                        )
-                      : Image.memory(
-                          song.imageData,
-                          height: 280,
-                          width: 280,
-                        ),
-                ),
-              ),
-            ),
-            MovingSlider(_audioManager.audioPlayer),
-            SizedBox(
-              height: 20.0,
-            ),
-            Text(
-              song != null ? (song.title != null ? song.title : '') : '',
-              style: TextStyle(
-                color: Colors.deepOrange,
-                fontSize: 24,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            SizedBox(
-              height: 10.0,
-            ),
-            Text(
-              song != null ? (song.album != null ? song.album : '') : '',
-              style: TextStyle(
-                color: Colors.black,
-                fontSize: 20,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            SizedBox(
-              height: 20.0,
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                IconButton(
-                  icon: Icon(
-                    Icons.fast_rewind,
-                    size: 40.0,
+      body: GestureDetector(
+        onVerticalDragDown: (DragDownDetails details) {
+          Navigator.pop(context);
+        },
+        child: Center(
+          child: Column(
+            children: <Widget>[
+              Container(
+                height: 280,
+                width: 280,
+                decoration: BoxDecoration(boxShadow: [
+                  BoxShadow(color: Colors.grey[500], blurRadius: 16.0),
+                ]),
+                margin: EdgeInsets.symmetric(vertical: 40.0, horizontal: 24.0),
+                padding: EdgeInsets.all(0.0),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.all(Radius.circular(4.0)),
+                  child: Hero(
+                    tag: 'song',
+                    child: song == null || song.imageData == null
+                        ? Image.asset(
+                            'assets/logo.png',
+                            height: 280,
+                            width: 280,
+                          )
+                        : Image.memory(
+                            song.imageData,
+                            height: 280,
+                            width: 280,
+                          ),
                   ),
-                  onPressed: () async {
-                    setState(() {
-                      _playerState = AudioPlayerState.PLAYING;
-                    });
-                    return await _audioManager.playPrev();
-                  },
                 ),
-                SizedBox(
-                  width: 10.0,
+              ),
+              MovingSlider(_audioManager.audioPlayer),
+              SizedBox(
+                height: 20.0,
+              ),
+              Text(
+                song != null ? (song.title != null ? song.title : '') : '',
+                style: TextStyle(
+                  color: Colors.deepOrange,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w600,
                 ),
-                IconButton(
-                  icon: Icon(
-                    _playerState == AudioPlayerState.PLAYING
-                        ? Icons.pause
-                        : Icons.play_arrow,
-                    size: 40.0,
-                  ),
-                  onPressed: () async {
-                    if (_playerState == AudioPlayerState.PLAYING) {
-                      setState(() {
-                        _playerState = AudioPlayerState.PAUSED;
-                      });
-                      return await _audioManager.pause();
-                    }
-                    if (_playerState == AudioPlayerState.PAUSED) {
+              ),
+              SizedBox(
+                height: 10.0,
+              ),
+              Text(
+                song != null ? (song.album != null ? song.album : '') : '',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              SizedBox(
+                height: 20.0,
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  IconButton(
+                    icon: Icon(
+                      Icons.fast_rewind,
+                      size: 40.0,
+                    ),
+                    onPressed: () async {
                       setState(() {
                         _playerState = AudioPlayerState.PLAYING;
                       });
-                      return await _audioManager.play(song);
-                    }
-                  },
-                ),
-                SizedBox(
-                  width: 10.0,
-                ),
-                IconButton(
-                  icon: Icon(
-                    Icons.fast_forward,
-                    size: 40.0,
+                      return await _audioManager.playPrev();
+                    },
                   ),
-                  onPressed: () async {
-                    setState(() {
-                      _playerState = AudioPlayerState.PLAYING;
-                    });
-                    return await _audioManager.playNext();
-                  },
-                ),
-              ],
-            )
-          ],
+                  SizedBox(
+                    width: 10.0,
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      _playerState == AudioPlayerState.PLAYING
+                          ? Icons.pause
+                          : Icons.play_arrow,
+                      size: 40.0,
+                    ),
+                    onPressed: () async {
+                      if (_playerState == AudioPlayerState.PLAYING) {
+                        setState(() {
+                          _playerState = AudioPlayerState.PAUSED;
+                        });
+                        return await _audioManager.pause();
+                      }
+                      if (_playerState == AudioPlayerState.PAUSED) {
+                        setState(() {
+                          _playerState = AudioPlayerState.PLAYING;
+                        });
+                        return await _audioManager.play(song);
+                      }
+                    },
+                  ),
+                  SizedBox(
+                    width: 10.0,
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      Icons.fast_forward,
+                      size: 40.0,
+                    ),
+                    onPressed: () async {
+                      setState(() {
+                        _playerState = AudioPlayerState.PLAYING;
+                      });
+                      return await _audioManager.playNext();
+                    },
+                  ),
+                ],
+              )
+            ],
+          ),
         ),
       ),
     );

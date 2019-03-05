@@ -89,12 +89,12 @@ class Song {
   String formatText(String val) {
     if (val == null) return val;
     print(val);
-    String formatted =
-        val.replaceAll(new RegExp(r'\(.*\)'), ''); // remove (ANYWORD)
-    formatted = val.replaceAll(
-        new RegExp(r'-[.*]'), ''); // remove - ANY TEXT AFTER HYPHEN
-    formatted = val.replaceAll(
-        new RegExp(r'\w+\.\w+'), ''); // remove word.word ANY DOMAIN WORD
+    String formatted = val.replaceAll(
+        new RegExp(r'(\(?[^ ]+?\.[^ ]+)|\(.*?\)|\d+'), ''); // remove (ANYWORD)
+    // formatted = val.replaceAll(
+    //     new RegExp(r'-[.*]'), ''); // remove - ANY TEXT AFTER HYPHEN
+    // formatted = val.replaceAll(
+    //     new RegExp(r'\w+\.\w+'), ''); // remove word.word ANY DOMAIN WORD
     print(formatted);
     return formatted;
   }

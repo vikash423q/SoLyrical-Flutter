@@ -25,7 +25,7 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   List<Song> _songs = [];
   AudioManager _audioManager;
-  PermissionStatus persmissionStatus;
+  PermissionStatus permissionStatus;
 
   @override
   void didUpdateWidget(Home oldWidget) {
@@ -35,12 +35,11 @@ class _HomeState extends State<Home> {
   @override
   void initState() {
     super.initState();
-    _checkPermission();
     _getSongFromDatabase();
     _audioManager = AudioManager(_songs, new AudioPlayer());
   }
 
-  void _checkPermission() {
+  Future<void> _checkPermission() async {
     if (Platform.isAndroid) {
       SimplePermissions.checkPermission(Permission.WriteExternalStorage)
           .then((chekOkay) {
@@ -48,12 +47,12 @@ class _HomeState extends State<Home> {
           SimplePermissions.requestPermission(Permission.WriteExternalStorage)
               .then((okDone) {
             setState(() {
-              persmissionStatus = okDone;
+              permissionStatus = okDone;
             });
           });
         } else {
           setState(() {
-            persmissionStatus = PermissionStatus.authorized;
+            permissionStatus = PermissionStatus.authorized;
           });
         }
       });
@@ -65,11 +64,14 @@ class _HomeState extends State<Home> {
     String path = databasesPath + 'demo.db';
     SongProvider provider = SongProvider();
     await provider.open(path);
+    // for testing -- reload from storage -- Remove three line below.
     var deleteCount = provider.deleteAll();
     print('Deleting All');
     print(await deleteCount);
     List<Song> songs = await provider.getAllSong();
     if (songs == null) {
+      if (permissionStatus != PermissionStatus.authorized)
+        await _checkPermission();
       await _getSongFromStorage(provider);
     } else {
       setState(() {
@@ -136,7 +138,7 @@ class _HomeState extends State<Home> {
         body: TabBarView(
           children: [
             SongListTab(_songs, _audioManager),
-            LyricsTab(),
+            LyricsTab(_audioManager),
           ],
         ),
       ),
