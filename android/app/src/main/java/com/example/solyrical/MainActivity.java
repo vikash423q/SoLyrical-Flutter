@@ -17,7 +17,14 @@ import android.os.Bundle;
 import android.media.MediaMetadataRetriever;
 import android.os.Environment;
 import java.io.File;
+import android.os.AsyncTask;
 import java.util.ArrayList;
+
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 public class MainActivity extends FlutterActivity {
   private static final String CHANNEL = "flutter.io/solyrical";
@@ -44,7 +51,7 @@ public class MainActivity extends FlutterActivity {
                         retriever.release();
                         result.success(data);
                       }
-                      else if(call.method.equals("getSongs")){
+                      else if(call.method.equals("getSongs")) {
 
                         result.success(getSongs());
                       }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:audioplayer/audioplayer.dart';
+import 'package:swipedetector/swipedetector.dart';
 
 import './audioManager.dart';
 
@@ -53,8 +54,8 @@ class SongPageState extends State<SongPage> {
           ),
         ],
       ),
-      body: GestureDetector(
-        onVerticalDragDown: (DragDownDetails details) {
+      body: SwipeDetector(
+        onSwipeDown: () {
           Navigator.pop(context);
         },
         child: Center(

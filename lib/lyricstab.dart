@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:audioplayer/audioplayer.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter/services.dart';
+import 'dart:convert';
 
 import './audioManager.dart';
 import './song.dart';
@@ -16,11 +18,10 @@ class LyricsTab extends StatefulWidget {
 }
 
 class LyricsTabState extends State<LyricsTab> {
-  final String lyricsUrl = 'https://search.azlyrics.com/search.php?q=';
+  final String listUrl = 'https://search.azlyrics.com/search.php?q=';
   final String listregex =
       "<a (?:href=\"(.*?)\".*<b>(.*?)</b></a>  by <b>(.*?)</b><br>)+?";
-  final String lyricsregex =
-      "<div>\\n<!-- Usage of azlyrics.com content by any third-party lyrics provider is prohibited by our licensing agreement. Sorry about that. -->\\n((?:(?:.*)?\\n)*?)<\\/div>";
+  final String lyricsUrl = 'http://vikashgaurav.com/lyrics';
   AudioManager _audioManager;
   Song _song;
   Duration _duration;
@@ -54,36 +55,28 @@ class LyricsTabState extends State<LyricsTab> {
   String _getLyricsLocal() {
     if (_song.lyrics == null) {
       _getLyricsNetwork();
-    }
-    return '';
+      return '';
+    } else
+      return _song.lyrics;
   }
 
-  Future<String> _getLyricsNetwork() async {
+  Future _getLyricsNetwork() async {
     print('getting lyrics from network');
-    http.Response response = await http.get(lyricsUrl + _song.title);
+    http.Response response = await http.get(listUrl + _song.title);
     String res = response.body;
     RegExp exp = new RegExp(listregex);
     Iterable<Match> matches = exp.allMatches(res);
     List<String> pages = [];
     // saving all pages found as result
     matches.forEach((item) => pages.add(item.group(1)));
-    // response = await http.get(pages[0], headers: headers);
-    http.Client client =http.Client();
-    var userClient =UserAgentClient(client);
-    http.BaseRequest request = http.Request('GET', Uri.parse(pages[0]));
-    http.StreamedResponse streamedResponse = await userClient.send(request);
-    
-    String lyricsPage = await streamedResponse.stream.bytesToString();
-    print(pages[0]);
-    print(lyricsPage);
-    RegExp lyricsexp = new RegExp(lyricsregex);
-    Match match = lyricsexp.firstMatch(lyricsPage);
-    String lyrics = match.group(0);
-    lyrics = lyrics.replaceAll("<br>", "\n");
-    lyrics = lyrics.replaceAll("<.*?>", "");
-    lyrics = lyrics.replaceAll("&quot;", "\"");
-    print(lyrics);
-    return lyrics;
+    if (pages.length == 0) return null;
+    response = await http.post(lyricsUrl, body: {'url': pages[0]});
+    String lyrics = response.body;
+    _song.lyrics = lyrics;
+    await _song.updateInDb();
+    setState(() {
+      _song = _song;
+    });
   }
 
   @override
@@ -97,21 +90,8 @@ class LyricsTabState extends State<LyricsTab> {
   Widget build(BuildContext context) {
     return Center(
       child: Container(
-        child: Text(_getLyricsLocal()),
+        child: Text(_song.lyrics == null ? _getLyricsLocal() : _song.lyrics),
       ),
     );
-  }
-}
-
-class UserAgentClient extends http.BaseClient {
-  final http.Client _inner;
-
-  UserAgentClient(this._inner);
-
-  Future<http.StreamedResponse> send(http.BaseRequest request) {
-    request.headers['User-Agent'] = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36';
-    request.headers['Origin'] = 'https://www.facebook.com';
-    request.headers['Referer'] = 'https://www.facebook.com';
-    return _inner.send(request);
   }
 }

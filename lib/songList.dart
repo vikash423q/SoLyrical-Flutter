@@ -27,11 +27,13 @@ class SongListTab extends StatelessWidget {
                       )
                     : Image.memory(
                         song.imageData,
-                        height: 52,
-                        width: 52,
+                        height: 50,
+                        width: 50,
                       )),
                 title: Text(song.title != null ? song.title : ''),
-                subtitle: Text(song.artist != null ? song.artist : ''),
+                subtitle: Text(song.artist != null
+                    ? song.artist
+                    : (song.album != null ? song.album : '')),
                 dense: true,
                 contentPadding:
                     EdgeInsets.symmetric(horizontal: 8.0, vertical: 0.0),
