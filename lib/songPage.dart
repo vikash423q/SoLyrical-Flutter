@@ -117,6 +117,7 @@ class SongPageState extends State<SongPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   IconButton(
+                    padding: EdgeInsets.all(8.0),
                     icon: Icon(
                       Icons.fast_rewind,
                       size: 40.0,
@@ -132,6 +133,7 @@ class SongPageState extends State<SongPage> {
                     width: 10.0,
                   ),
                   IconButton(
+                    padding: EdgeInsets.all(8.0),
                     icon: Icon(
                       _playerState == AudioPlayerState.PLAYING
                           ? Icons.pause
@@ -157,6 +159,7 @@ class SongPageState extends State<SongPage> {
                     width: 10.0,
                   ),
                   IconButton(
+                    padding: EdgeInsets.all(8.0),
                     icon: Icon(
                       Icons.fast_forward,
                       size: 40.0,
@@ -252,8 +255,14 @@ class MovingSliderState extends State<MovingSlider> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
-              Text(_getFormattedTime(_position)),
-              Text(_getFormattedTime(_max)),
+              Text(
+                _getFormattedTime(_position),
+                style: TextStyle(color: Colors.grey[700]),
+              ),
+              Text(
+                '- ' + _getFormattedTime(_max - _position),
+                style: TextStyle(color: Colors.grey[700]),
+              ),
             ],
           ),
         ),

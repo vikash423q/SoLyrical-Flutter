@@ -65,9 +65,9 @@ class _HomeState extends State<Home> {
     SongProvider provider = SongProvider();
     await provider.open(path);
     // for testing -- reload from storage -- Remove three line below.
-    var deleteCount = provider.deleteAll();
-    print('Deleting All');
-    print(await deleteCount);
+    // var deleteCount = provider.deleteAll();
+    // print('Deleting All');
+    // print(await deleteCount);
     List<Song> songs = await provider.getAllSong();
     if (songs == null) {
       if (permissionStatus != PermissionStatus.authorized)
@@ -83,6 +83,7 @@ class _HomeState extends State<Home> {
   }
 
   _getSongFromStorage(SongProvider provider) async {
+    print('getting from storage');
     List<String> localSongs = await LocalStorage.getLocalSongs();
     provider.deleteAll();
     for (var i = 0; i < localSongs.length; i++) {

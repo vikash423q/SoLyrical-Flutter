@@ -62,15 +62,18 @@ class Song {
     });
   }
 
-  Future updateInDb() async {
+  Future<int> updateInDb() async {
     var databasesPath = await getDatabasesPath();
     String path = databasesPath + 'demo.db';
     SongProvider provider = SongProvider();
     await provider.open(path);
-    provider.update(this);
+    var count = await provider.update(this);
+    await provider.close();
+    return count;
   }
 
   Song.fromMap(Map<String, dynamic> map) {
+    id = map[columnId];
     path = map[columnPath];
     title = map[columnTitle];
     artist = map[columnArtist];
@@ -81,6 +84,7 @@ class Song {
 
   Map<String, dynamic> toMap() {
     Map<String, dynamic> map = {};
+    map[columnId] = id;
     map[columnPath] = path;
     map[columnTitle] = title;
     map[columnAlbum] = album;

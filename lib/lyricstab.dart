@@ -27,7 +27,7 @@ class LyricsTabState extends State<LyricsTab> {
   int _position;
   var _audioPlayerStateSubscription;
   var _positionSubscription;
-  String _dropDownValue = '';
+  dynamic _dropDownValue;
 
   @override
   void initState() {
@@ -35,7 +35,8 @@ class LyricsTabState extends State<LyricsTab> {
     _audioManager = widget._audioManager;
     var _audioPlayer = _audioManager.audioPlayer;
     _song = _audioManager.playingNow;
-    _relatedLyrics = [{'title':_song.title,'artist':_song.artist}];
+    _dropDownValue = {'title': _song.title, 'artist': _song.artist};
+    _relatedLyrics = [_dropDownValue];
     _audioPlayerStateSubscription =
         _audioPlayer.onPlayerStateChanged.listen((_state) {
       if (_state == AudioPlayerState.PLAYING) {
@@ -51,18 +52,18 @@ class LyricsTabState extends State<LyricsTab> {
       //   _position = position.inSeconds;
       // });
     });
+    _getLyricsNetwork();
   }
 
   @override
   void didUpdateWidget(LyricsTab oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _relatedLyrics = [{'title':_song.title,'artist':_song.artist}];
   }
 
   String _getLyricsLocal() {
     if (_song.lyrics == null) {
       _getLyricsNetwork();
-      return '';
+      return 'Fetching Lyrics..';
     } else
       return _song.lyrics;
   }
@@ -78,18 +79,21 @@ class LyricsTabState extends State<LyricsTab> {
     var matches = res['matches'];
     var defaultLyrics = res['lyrics'];
     _song.lyrics = defaultLyrics;
-    await _song.updateInDb();
+    print(await _song.updateInDb());
     if (mounted) {
       setState(() {
         _song = _song;
-        _relatedLyrics = matches;
-        _dropDownValue = matches.length > 0
-            ? matches[0]['title'] + ' by ' + matches[0]['artist']
-            : '';
+        _relatedLyrics = matches != null
+            ? matches
+            : [
+                {'title': _song.title, 'artist': _song.artist}
+              ];
+        _dropDownValue = matches != null
+            ? matches[0]
+            : {'title': _song.title, 'artist': _song.artist};
       });
     }
   }
-
 
   Future<List<dynamic>> _getRelatedLyrics() async {
     http.Response response = await http.post(listUrl, body: {
@@ -102,9 +106,6 @@ class LyricsTabState extends State<LyricsTab> {
     if (mounted) {
       setState(() {
         _relatedLyrics = matches;
-        _dropDownValue = matches.length > 0
-            ? matches[0]['title'] + ' by ' + matches[0]['artist']
-            : '';
       });
     }
     return matches;
@@ -124,23 +125,31 @@ class LyricsTabState extends State<LyricsTab> {
       child: Column(
         children: <Widget>[
           DropdownButton(
-            value:_dropDownValue,
-            items: _relatedLyrics.map<DropdownMenuItem<String>>((item) {
+            iconSize: 32.0,
+            value: _relatedLyrics[0],
+            items: _relatedLyrics.map<DropdownMenuItem<dynamic>>((item) {
               return DropdownMenuItem(
-                value: item['title'] + ' by ' + item['artist'],
-                child: Text(item['title'] + ' by ' + item['artist']),
+                value: item,
+                child: Text(item['title'] + " by " + item['artist']),
               );
-            }).toList() ,
-            onChanged: (String newValue) {
+            }).toList(),
+            onChanged: (dynamic newValue) async {
+              http.Response response =
+                  await http.post(lyricsUrl, body: {'url': newValue['url']});
+              var res = jsonDecode(response.body);
+              _song.lyrics = res['lyrics'];
+              await _song.updateInDb();
               setState(() {
                 _dropDownValue = newValue;
               });
             },
           ),
-          Container(
-            child: Text(_song == null
-                ? ''
-                : (_song.lyrics == null ? _getLyricsLocal() : _song.lyrics)),
+          Expanded(
+            child: Container(
+              child: Text(_song == null
+                  ? 'Have A Musical Day'
+                  : (_song.lyrics == null ? _getLyricsLocal() : _song.lyrics)),
+            ),
           ),
         ],
       ),
